@@ -13,7 +13,7 @@ func ExitMsg(msg string) {
 	os.Exit(1)
 }
 
-func ExitWithCtrlC() {
+func ExitWithSigExit() {
 	// 创建一个信号通道
 	var sigChan = make(chan os.Signal, 1)
 	// 监听 SIGINT 信号

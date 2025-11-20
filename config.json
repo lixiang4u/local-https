@@ -1,0 +1,8 @@
+{
+  "cert_name": "fuck-host.org",
+  "proxy": {
+    "fuck-www.fuck-host.com": "",
+    "fuck-abc.fuck-host.com": "",
+    "fuck-xyz.fuck-host.com": ""
+  }
+}

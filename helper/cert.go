@@ -16,9 +16,9 @@ import (
 )
 
 func MakeDomainCertificate(certificateName string, dnsNames []string) (cert, key string, err error) {
-	_ = MkdirAll(filepath.Join(AppPath(), "certs/1.txt"))
-	cert = filepath.Join(AppPath(), fmt.Sprintf("certs/%s.crt", certificateName)) // 同 ca.crt 文件 // 同 cert.pem 文件
-	key = filepath.Join(AppPath(), fmt.Sprintf("certs/%s.key", certificateName))  // 同 ca.key 文件 // 同 key.pem 文件
+	_ = MkdirAll(filepath.Join(AppPath(), "www/certs/1.txt"))
+	cert = filepath.Join(AppPath(), fmt.Sprintf("www/certs/%s.crt", certificateName)) // 同 ca.crt 文件 // 同 cert.pem 文件
+	key = filepath.Join(AppPath(), fmt.Sprintf("www/certs/%s.key", certificateName))  // 同 ca.key 文件 // 同 key.pem 文件
 	_, certErr := os.Stat(cert)
 	_, keyErr := os.Stat(key)
 	if certErr == nil && keyErr == nil {
