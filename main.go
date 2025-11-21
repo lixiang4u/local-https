@@ -82,6 +82,10 @@ func runLocalHttpServer(port int, domain string) {
 	app.NoRoute(func(ctx *gin.Context) {
 		ctx.String(http.StatusOK, fmt.Sprintf("[http://127.0.0.1:%d] %s", port, time.Now().String()))
 	})
+	_ = helper.WriteFileContent(
+		filepath.Join(helper.AppPath(), "www", domain, "index.html"),
+		[]byte(fmt.Sprintf(`<!doctype html><html lang="en"><head><meta charset="UTF-8"><title>FuckHost.org</title></head><body><h1>%s</h1></body></html>`, domain)),
+	)
 	log.Println(fmt.Sprintf("[反向代理] %s -> 127.0.0.1:%d", domain, port))
 	if err := app.Run(fmt.Sprintf(fmt.Sprintf(":%d", port))); err != nil {
 		log.Println(fmt.Sprintf("[http://127.0.0.1:%d] 启动失败 %s", port, err.Error()))
