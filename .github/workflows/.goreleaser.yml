@@ -1,9 +1,4 @@
-project_name: local-https
-
-before:
-  hooks:
-    - go mod tidy
-
+# .goreleaser.yml
 builds:
   - env:
       - CGO_ENABLED=0
@@ -11,15 +6,20 @@ builds:
       - windows
     goarch:
       - amd64
-    ldflags:
-      - -s -w
+      - 386
+      - arm64
     binary: local-https
+    main: .
+    ldflags:
+      - -s -w -X main.version={{.Version}}
 
 archives:
   - format: zip
-    name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
 release:
   github:
-    owner: local-https
+    owner: lixiang4u
     name: local-https
+  draft: false
+  prerelease: false
