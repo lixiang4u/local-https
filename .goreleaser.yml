@@ -1,0 +1,24 @@
+# .goreleaser.yml
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - windows
+    goarch:
+      - amd64
+      - 386
+    binary: local-https
+    main: .
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+
+archives:
+  - format: zip
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+release:
+  github:
+    owner: lixiang4u
+    name: local-https
+  draft: false
+  prerelease: false
