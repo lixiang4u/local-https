@@ -1,0 +1,25 @@
+project_name: local-https
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - windows
+    goarch:
+      - amd64
+    ldflags:
+      - -s -w
+    binary: local-https
+
+archives:
+  - format: zip
+    name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
+
+release:
+  github:
+    owner: local-https
+    name: local-https
