@@ -13,12 +13,12 @@
 }
 ```
 
-2、本地启动`www.google.com`域名服务，转发到`http://192.168.1.2:8090`服务
+2、本地启动`www.google.com`域名服务，转发到`http://192.168.1.2:8060`服务
 ```
 {
   "cert_name": "local-https.org",
   "proxy": {
-    "www.google.com": "http://192.168.1.2:8090"
+    "www.google.com": "http://192.168.1.2:8060"
   }
 }
 ```
