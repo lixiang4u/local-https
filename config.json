@@ -1,6 +1,7 @@
 {
-  "cert_name": "fuck-host.org",
+  "cert_name": "local-https.org",
   "proxy": {
-    "www.google.com": ""
+    "www.google.com": "",
+    "api.google.com": "http://127.0.0.1:8002"
   }
 }

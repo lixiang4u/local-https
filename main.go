@@ -32,7 +32,7 @@ func main() {
 		helper.ExitMsg(fmt.Sprintf("证书生成失败：%s", err.Error()))
 		return
 	}
-	_, err = helper.AddCertToRoot(cert)
+	_, err = helper.ReplaceCertToRoot(cert)
 	if err != nil {
 		helper.ExitMsg(fmt.Sprintf("导入证书失败：%s", err.Error()))
 		return
@@ -48,17 +48,17 @@ func main() {
 		if helper.ParseHost(tmpRedirect) != "" {
 			// 使用配置的转发地址
 			proxyMap[tmpHost] = tmpRedirect
-			log.Println(fmt.Sprintf("[反向代理] %s -> %s", tmpHost, tmpRedirect))
-			continue
+			log.Println(fmt.Sprintf("[转发地址] %s -> %s", tmpHost, tmpRedirect))
+		} else {
+			// 启动虚拟web服务
+			p = helper.NextUsefulPort(p)
+			go runLocalHttpServer(p, tmpHost)
+			// 使用默认的转发地址
+			proxyMap[tmpHost] = fmt.Sprintf("http://127.0.0.1:%d", p)
+			log.Println(fmt.Sprintf("[转发地址] %s -> 127.0.0.1:%d", tmpHost, p))
 		}
-		// 启动虚拟web服务
-		p = helper.NextUsefulPort(p)
-		go runLocalHttpServer(p, tmpHost)
 		time.Sleep(time.Second / 3)
 		_ = helper.UpdateWindowsHosts(fmt.Sprintf("127.0.0.1	%s", tmpHost))
-
-		// 使用默认的转发地址
-		proxyMap[tmpHost] = fmt.Sprintf("http://127.0.0.1:%d", p)
 	}
 
 	runReverseProxyServer(proxyMap, cert, key)
@@ -84,9 +84,8 @@ func runLocalHttpServer(port int, domain string) {
 	})
 	_ = helper.WriteFileContent(
 		filepath.Join(helper.AppPath(), "www", domain, "index.html"),
-		[]byte(fmt.Sprintf(`<!doctype html><html lang="en"><head><meta charset="UTF-8"><title>FuckHost.org</title></head><body><h1>%s</h1></body></html>`, domain)),
+		[]byte(fmt.Sprintf(`<!doctype html><html lang="en"><head><meta charset="UTF-8"><title>%s</title></head><body><h1>已经转发 %s -> http://127.0.0.1:%d</h1></body></html>`, domain, domain, port)),
 	)
-	log.Println(fmt.Sprintf("[反向代理] %s -> 127.0.0.1:%d", domain, port))
 	if err := app.Run(fmt.Sprintf(":%d", port)); err != nil {
 		log.Println(fmt.Sprintf("[http://127.0.0.1:%d] 启动失败 %s", port, err.Error()))
 	}
@@ -120,7 +119,7 @@ func runReverseProxyServer(proxyHostMap map[string]string, cert, key string) {
 
 	//var registerHandler = make([])
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		// 查找对应的代理处理器
+		// 查找对应的转发处理器
 		if handler, ok := proxyHandlers[r.Host]; ok {
 			log.Println("[ServeHTTP]", r.RequestURI)
 			if handler == nil {

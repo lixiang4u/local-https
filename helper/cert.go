@@ -15,6 +15,8 @@ import (
 	"time"
 )
 
+var email = "localhost@local-https.org" // 标识证书用
+
 func MakeDomainCertificate(certificateName string, dnsNames []string) (cert, key string, err error) {
 	_ = MkdirAll(filepath.Join(AppPath(), "www/certs/1.txt"))
 	cert = filepath.Join(AppPath(), fmt.Sprintf("www/certs/%s.crt", certificateName)) // 同 ca.crt 文件 // 同 cert.pem 文件
@@ -35,13 +37,13 @@ func MakeDomainCertificate(certificateName string, dnsNames []string) (cert, key
 	template := x509.Certificate{
 		SerialNumber: big.NewInt(int64(time.Now().Year())), // 序列号
 		Subject: pkix.Name{
-			CommonName:   "FuckHost.org",
+			CommonName:   certificateName,
 			Organization: []string{certificateName},
 			Country:      []string{"USA"},
 			Province:     []string{"USA"},
 		},
 		Issuer: pkix.Name{
-			CommonName:   "FuckHost.org",
+			CommonName:   certificateName,
 			Organization: []string{certificateName},
 			Country:      []string{"USA"},
 			Province:     []string{"USA"},
@@ -53,6 +55,7 @@ func MakeDomainCertificate(certificateName string, dnsNames []string) (cert, key
 		BasicConstraintsValid: true,
 		IsCA:                  true, // 标记为CA证书
 		DNSNames:              dnsNames,
+		EmailAddresses:        []string{email},
 	}
 
 	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
@@ -93,6 +96,17 @@ func AppendCertsFromPEM(pemCerts []byte) bool {
 }
 
 func AddCertToRoot(crt string) ([]byte, error) {
+	cmd := exec.Command("certutil", "-addstore", "root", crt)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return nil, err
+	}
+	output, _ = GBKToUTF8(output)
+	return output, nil
+}
+
+func ReplaceCertToRoot(crt string) ([]byte, error) {
+	_, _ = exec.Command("certutil", "-delstore", "root", email).CombinedOutput()
 	cmd := exec.Command("certutil", "-addstore", "root", crt)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
