@@ -121,7 +121,7 @@ func runReverseProxyServer(proxyHostMap map[string]string, cert, key string) {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		// 查找对应的转发处理器
 		if handler, ok := proxyHandlers[r.Host]; ok {
-			log.Println("[ServeHTTP]", r.RequestURI)
+			log.Println("[req]", fmt.Sprintf("http(s)://%s/%s", strings.TrimRight(r.Host, "/"), strings.TrimLeft(r.RequestURI, "/")))
 			if handler == nil {
 				return
 			}
