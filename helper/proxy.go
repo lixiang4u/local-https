@@ -29,6 +29,11 @@ func NewHostReverseProxyHandlerMap(proxyHostMap map[string]string) map[string]ht
 			req.Header.Set("X-Forwarded-Host", req.Host) // 添加X-Forwarded头信息
 			req.Header.Set("X-Forwarded-Proto", "http")
 		}
+		proxy.ModifyResponse = func(resp *http.Response) error {
+			resp.Header.Set("Access-Control-Allow-Origin", "*")
+			resp.Header.Set("X-Client-Server", "local-https")
+			return nil
+		}
 		handlers[domain] = proxy
 	}
 	return handlers
