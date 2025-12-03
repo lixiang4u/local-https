@@ -113,15 +113,15 @@ func runWebServer(domain, cert, key string) {
 func runReverseProxyServer(proxyHostMap map[string]string, cert, key string) {
 	var proxyHandlers = helper.NewHostReverseProxyHandlerMap(proxyHostMap)
 
-	http.HandleFunc("/api/cctv", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("[自定义处理器]", r.Host, r.RequestURI)
-	})
+	//http.HandleFunc("/api/cctv", func(w http.ResponseWriter, r *http.Request) {
+	//	log.Println("[自定义处理器]", r.Host, r.RequestURI)
+	//})
 
 	//var registerHandler = make([])
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		// 查找对应的转发处理器
 		if handler, ok := proxyHandlers[r.Host]; ok {
-			log.Println("[req]", fmt.Sprintf("http(s)://%s/%s", strings.TrimRight(r.Host, "/"), strings.TrimLeft(r.RequestURI, "/")))
+			log.Println("[local-https-req]", fmt.Sprintf("http(s)://%s/%s", strings.TrimRight(r.Host, "/"), strings.TrimLeft(r.RequestURI, "/")))
 			if handler == nil {
 				return
 			}
