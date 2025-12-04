@@ -2,6 +2,7 @@ package helper
 
 import (
 	"fmt"
+	"github.com/lixiang4u/local-https/model"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -9,16 +10,16 @@ import (
 	"strings"
 )
 
-func NewHostReverseProxyHandlerMap(proxyHostMap map[string]string) map[string]http.Handler {
+func NewHostReverseProxyHandlerMap(proxyList []model.Proxy) map[string]http.Handler {
 	handlers := make(map[string]http.Handler)
-	for domain, target := range proxyHostMap {
-		targetURL, err := url.Parse(target)
+	for _, item := range proxyList {
+		targetURL, err := url.Parse(item.Backend)
 		if err != nil {
-			log.Println(fmt.Sprintf("[目标URL错误] %s: %v", target, err))
+			log.Println(fmt.Sprintf("[目标URL错误] %s->%s: %v", item.Host, item.Backend, err))
 			continue
 		}
-		domain = strings.TrimSpace(domain)
-		if !CheckHost(domain) {
+		item.Host = strings.TrimSpace(item.Host)
+		if !CheckHost(item.Host) {
 			continue
 		}
 		var proxy = httputil.NewSingleHostReverseProxy(targetURL)
@@ -30,11 +31,13 @@ func NewHostReverseProxyHandlerMap(proxyHostMap map[string]string) map[string]ht
 			req.Header.Set("X-Forwarded-Proto", "http")
 		}
 		proxy.ModifyResponse = func(resp *http.Response) error {
-			resp.Header.Set("Access-Control-Allow-Origin", "*")
+			if item.Cors {
+				resp.Header.Set("Access-Control-Allow-Origin", "*")
+			}
 			resp.Header.Set("X-Client-Server", "local-https")
 			return nil
 		}
-		handlers[domain] = proxy
+		handlers[item.Host] = proxy
 	}
 	return handlers
 }

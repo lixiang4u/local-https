@@ -5,7 +5,8 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/lixiang4u/local-https/helper"
-	"github.com/spf13/viper"
+	"github.com/lixiang4u/local-https/model"
+	"github.com/sourcegraph/conc/iter"
 	"log"
 	"net/http"
 	"path/filepath"
@@ -18,16 +19,12 @@ func main() {
 		helper.ExitMsg("请使用管理员权限打开")
 	}
 
-	certName, proxyMap, err := initConfig()
-	if err != nil {
-		return
-	}
-	if err != nil {
-		helper.ExitMsg(fmt.Sprintf("配置文件异常：%s", err.Error()))
-		return
-	}
+	var appConfig = model.NewAppConfig{}.AppConfig()
 
-	cert, key, err := helper.MakeDomainCertificate(certName, helper.MapKeys(proxyMap))
+	var dnsNames = iter.Map(appConfig.ProxyList, func(item *model.Proxy) string {
+		return item.Host
+	})
+	cert, key, err := helper.MakeDomainCertificate(appConfig.CertName, dnsNames)
 	if err != nil {
 		helper.ExitMsg(fmt.Sprintf("证书生成失败：%s", err.Error()))
 		return
@@ -40,28 +37,27 @@ func main() {
 	//log.Println("[导入证书信息]", string(output))
 
 	var p = 8060
-	for tmpHost, tmpRedirect := range proxyMap {
-		tmpHost = strings.TrimSpace(tmpHost)
-		if !helper.CheckHost(tmpHost) {
+	for idx, item := range appConfig.ProxyList {
+		item.Host = strings.TrimSpace(item.Host)
+		if !helper.CheckHost(item.Host) {
 			continue
 		}
-		if helper.ParseHost(tmpRedirect) != "" {
+		if helper.ParseHost(item.Backend) != "" {
 			// 使用配置的转发地址
-			proxyMap[tmpHost] = tmpRedirect
-			log.Println(fmt.Sprintf("[转发地址] %s -> %s", tmpHost, tmpRedirect))
+			log.Println(fmt.Sprintf("[转发地址] %s -> %s", item.Host, item.Backend))
 		} else {
 			// 启动虚拟web服务
 			p = helper.NextUsefulPort(p)
-			go runLocalHttpServer(p, tmpHost)
+			go runLocalHttpServer(p, item.Host)
 			// 使用默认的转发地址
-			proxyMap[tmpHost] = fmt.Sprintf("http://127.0.0.1:%d", p)
-			log.Println(fmt.Sprintf("[转发地址] %s -> 127.0.0.1:%d", tmpHost, p))
+			appConfig.ProxyList[idx].Backend = fmt.Sprintf("http://127.0.0.1:%d", p)
+			log.Println(fmt.Sprintf("[转发地址] %s -> 127.0.0.1:%d", item.Host, p))
 		}
 		time.Sleep(time.Second / 3)
-		_ = helper.UpdateWindowsHosts(fmt.Sprintf("127.0.0.1	%s", tmpHost))
+		_ = helper.UpdateWindowsHosts(fmt.Sprintf("127.0.0.1	%s", item.Host))
 	}
 
-	runReverseProxyServer(proxyMap, cert, key)
+	runReverseProxyServer(appConfig.ProxyList, cert, key)
 
 	helper.ExitWithSigExit()
 }
@@ -110,8 +106,8 @@ func runWebServer(domain, cert, key string) {
 	}
 }
 
-func runReverseProxyServer(proxyHostMap map[string]string, cert, key string) {
-	var proxyHandlers = helper.NewHostReverseProxyHandlerMap(proxyHostMap)
+func runReverseProxyServer(proxyList []model.Proxy, cert, key string) {
+	var proxyHandlers = helper.NewHostReverseProxyHandlerMap(proxyList)
 
 	//http.HandleFunc("/api/cctv", func(w http.ResponseWriter, r *http.Request) {
 	//	log.Println("[自定义处理器]", r.Host, r.RequestURI)
@@ -139,19 +135,4 @@ func runReverseProxyServer(proxyHostMap map[string]string, cert, key string) {
 		log.Println("[启动本地https服务]")
 		log.Fatal(http.ListenAndServeTLS(":443", cert, key, nil))
 	}()
-}
-
-func initConfig() (certName string, proxyMap map[string]string, err error) {
-	viper.SetConfigFile(filepath.Join(helper.AppPath(), "config.json"))
-	err = viper.ReadInConfig()
-	if err != nil {
-		return
-	}
-	if err = viper.UnmarshalKey("cert_name", &certName); err != nil {
-		return
-	}
-	if err = viper.UnmarshalKey("proxy", &proxyMap); err != nil {
-		return
-	}
-	return
 }

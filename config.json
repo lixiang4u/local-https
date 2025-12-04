@@ -1,7 +1,15 @@
 {
   "cert_name": "local-https.org",
-  "proxy": {
-    "www.google.com": "",
-    "api.google.com": "http://127.0.0.1:8002"
-  }
+  "proxy_list": [
+    {
+      "host": "www.google.com",
+      "backend": "",
+      "cors": false
+    },
+    {
+      "host": "api.google.com",
+      "backend": "http://127.0.0.1:8002",
+      "cors": true
+    }
+  ]
 }
