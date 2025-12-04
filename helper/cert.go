@@ -9,9 +9,11 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	rand2 "math/rand/v2"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -21,12 +23,12 @@ func MakeDomainCertificate(certificateName string, dnsNames []string) (cert, key
 	_ = MkdirAll(filepath.Join(AppPath(), "www/certs/1.txt"))
 	cert = filepath.Join(AppPath(), fmt.Sprintf("www/certs/%s.crt", certificateName)) // 同 ca.crt 文件 // 同 cert.pem 文件
 	key = filepath.Join(AppPath(), fmt.Sprintf("www/certs/%s.key", certificateName))  // 同 ca.key 文件 // 同 key.pem 文件
-	_, certErr := os.Stat(cert)
-	_, keyErr := os.Stat(key)
-	if certErr == nil && keyErr == nil {
-		log.Println("[证书已存在]")
-		return
-	}
+	//_, certErr := os.Stat(cert)
+	//_, keyErr := os.Stat(key)
+	//if certErr == nil && keyErr == nil {
+	//	log.Println("[证书文件已存在]")
+	//	return
+	//}
 
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
@@ -35,7 +37,7 @@ func MakeDomainCertificate(certificateName string, dnsNames []string) (cert, key
 
 	// 创建证书模板
 	template := x509.Certificate{
-		SerialNumber: big.NewInt(int64(time.Now().Year())), // 序列号
+		SerialNumber: big.NewInt(int64(time.Now().Year()*10000000000000 + rand2.IntN(99999999))), // 序列号
 		Subject: pkix.Name{
 			CommonName:   certificateName,
 			Organization: []string{certificateName},
@@ -106,12 +108,21 @@ func AddCertToRoot(crt string) ([]byte, error) {
 }
 
 func ReplaceCertToRoot(crt string) ([]byte, error) {
-	_, _ = exec.Command("certutil", "-delstore", "root", email).CombinedOutput()
+	output, err := exec.Command("certutil", "-delstore", "root", email).CombinedOutput()
+	if err != nil {
+		log.Println("[移除旧证书失败]", err.Error())
+	}
+	output, _ = GBKToUTF8(output)
+	log.Println("[移除旧证书]", strings.TrimSpace(string(output)))
+
+	time.Sleep(time.Second / 2)
+
 	cmd := exec.Command("certutil", "-addstore", "root", crt)
-	output, err := cmd.CombinedOutput()
+	output, err = cmd.CombinedOutput()
 	if err != nil {
 		return nil, err
 	}
 	output, _ = GBKToUTF8(output)
+	log.Println("[添加新证书]", strings.TrimSpace(string(output)))
 	return output, nil
 }
