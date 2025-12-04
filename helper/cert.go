@@ -107,15 +107,17 @@ func AddCertToRoot(crt string) ([]byte, error) {
 	return output, nil
 }
 
-func ReplaceCertToRoot(crt string) ([]byte, error) {
+func ReplaceCertToRoot(crt string, debug bool) ([]byte, error) {
 	output, err := exec.Command("certutil", "-delstore", "root", email).CombinedOutput()
 	if err != nil {
 		log.Println("[移除旧证书失败]", err.Error())
 	}
-	output, _ = GBKToUTF8(output)
-	log.Println("[移除旧证书]", strings.TrimSpace(string(output)))
+	if debug {
+		output, _ = GBKToUTF8(output)
+		log.Println("[移除旧证书]", strings.TrimSpace(string(output)))
+	}
 
-	time.Sleep(time.Second / 2)
+	time.Sleep(time.Second / 4)
 
 	cmd := exec.Command("certutil", "-addstore", "root", crt)
 	output, err = cmd.CombinedOutput()
@@ -123,6 +125,8 @@ func ReplaceCertToRoot(crt string) ([]byte, error) {
 		return nil, err
 	}
 	output, _ = GBKToUTF8(output)
-	log.Println("[添加新证书]", strings.TrimSpace(string(output)))
+	if debug {
+		log.Println("[添加新证书]", strings.TrimSpace(string(output)))
+	}
 	return output, nil
 }

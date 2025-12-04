@@ -1,4 +1,5 @@
 {
+  "debug": false,
   "cert_name": "local-https.org",
   "proxy_list": [
     {

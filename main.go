@@ -29,7 +29,7 @@ func main() {
 		helper.ExitMsg(fmt.Sprintf("证书生成失败：%s", err.Error()))
 		return
 	}
-	_, err = helper.ReplaceCertToRoot(cert)
+	_, err = helper.ReplaceCertToRoot(cert, appConfig.Debug)
 	if err != nil {
 		helper.ExitMsg(fmt.Sprintf("导入证书失败：%s", err.Error()))
 		return
@@ -44,14 +44,14 @@ func main() {
 		}
 		if helper.ParseHost(item.Backend) != "" {
 			// 使用配置的转发地址
-			log.Println(fmt.Sprintf("[转发地址] %s -> %s", item.Host, item.Backend))
+			log.Println(fmt.Sprintf("[配置转发] %s -> %s", item.Host, item.Backend))
 		} else {
 			// 启动虚拟web服务
 			p = helper.NextUsefulPort(p)
 			go runLocalHttpServer(p, item.Host)
 			// 使用默认的转发地址
 			appConfig.ProxyList[idx].Backend = fmt.Sprintf("http://127.0.0.1:%d", p)
-			log.Println(fmt.Sprintf("[转发地址] %s -> 127.0.0.1:%d", item.Host, p))
+			log.Println(fmt.Sprintf("[配置转发] %s -> 127.0.0.1:%d", item.Host, p))
 		}
 		time.Sleep(time.Second / 3)
 		_ = helper.UpdateWindowsHosts(fmt.Sprintf("127.0.0.1	%s", item.Host))

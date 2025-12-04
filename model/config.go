@@ -16,6 +16,7 @@ type Proxy struct {
 }
 
 type AppConfig struct {
+	Debug     bool    `json:"debug" mapstructure:"debug"`
 	CertName  string  `json:"cert_name" mapstructure:"cert_name"`
 	ProxyList []Proxy `json:"proxy_list" mapstructure:"proxy_list"`
 }
