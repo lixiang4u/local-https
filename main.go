@@ -20,11 +20,14 @@ func main() {
 	}
 
 	var appConfig = model.NewAppConfig{}.AppConfig()
+	if len(appConfig.ProxyList) <= 0 {
+		helper.ExitMsg("转发配置不能为空")
+	}
 
 	var dnsNames = iter.Map(appConfig.ProxyList, func(item *model.Proxy) string {
 		return item.Host
 	})
-	cert, key, err := helper.MakeDomainCertificate(appConfig.CertName, dnsNames)
+	cert, key, err := helper.MakeDomainCertificate(appConfig.CertName, dnsNames, appConfig.Debug)
 	if err != nil {
 		helper.ExitMsg(fmt.Sprintf("证书生成失败：%s", err.Error()))
 		return

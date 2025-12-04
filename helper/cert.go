@@ -19,16 +19,18 @@ import (
 
 var email = "localhost@local-https.org" // 标识证书用
 
-func MakeDomainCertificate(certificateName string, dnsNames []string) (cert, key string, err error) {
+func MakeDomainCertificate(certificateName string, dnsNames []string, debug bool) (cert, key string, err error) {
 	_ = MkdirAll(filepath.Join(AppPath(), "www/certs/1.txt"))
 	cert = filepath.Join(AppPath(), fmt.Sprintf("www/certs/%s.crt", certificateName)) // 同 ca.crt 文件 // 同 cert.pem 文件
 	key = filepath.Join(AppPath(), fmt.Sprintf("www/certs/%s.key", certificateName))  // 同 ca.key 文件 // 同 key.pem 文件
-	//_, certErr := os.Stat(cert)
-	//_, keyErr := os.Stat(key)
-	//if certErr == nil && keyErr == nil {
-	//	log.Println("[证书文件已存在]")
-	//	return
-	//}
+	_, certErr := os.Stat(cert)
+	_, keyErr := os.Stat(key)
+	if certErr == nil && keyErr == nil && !debug { // debug模式不缓存
+		log.Println("[证书文件已存在]", cert)
+		return
+	}
+	var sn = big.NewInt(int64(time.Now().Year()*10000000000000 + rand2.IntN(99999999)))
+	log.Println("[开始生成证书]", sn)
 
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
@@ -37,7 +39,7 @@ func MakeDomainCertificate(certificateName string, dnsNames []string) (cert, key
 
 	// 创建证书模板
 	template := x509.Certificate{
-		SerialNumber: big.NewInt(int64(time.Now().Year()*10000000000000 + rand2.IntN(99999999))), // 序列号
+		SerialNumber: sn, // 序列号
 		Subject: pkix.Name{
 			CommonName:   certificateName,
 			Organization: []string{certificateName},
